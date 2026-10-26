@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>จัดการหนังสือ - ระบบเช่าหนังสือ</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="container py-4">
+    <!-- Navbar Navigation -->
+    <nav class="nav nav-pills nav-fill mb-4 p-2 bg-light border rounded">
+        <a class="nav-link" href="/rentals">📋 บันทึกการเช่า-คืน</a>
+        <a class="nav-link active" href="/books">📚 จัดการรายการหนังสือ</a>
+        <a class="nav-link" href="/customers">👤 จัดการรายชื่อผู้เช่า</a>
+    </nav>
+
+    <div class="card mb-4 p-3 bg-light shadow-sm">
+        <h3>เพิ่มหนังสือเล่มใหม่</h3>
+        <form action="/books/add" method="POST" class="row g-3 mt-1">
+            <div class="col-md-3">
+                <label class="form-label">หมวดหมู่</label>
+                <select name="category_id" class="form-select" required>
+                    <% categories.forEach(cat => { %>
+                        <option value="<%= cat.id %>"><%= cat.category_name %></option>
+                    <% }) %>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">ชื่อหนังสือ</label>
+                <input type="text" name="book_name" class="form-control" required placeholder="เช่น วันพีช">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">ค่าเช่าต่อวัน (บาท)</label>
+                <input type="number" step="0.01" name="rental_price" class="form-control" required placeholder="0.00">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">สภาพ/รายละเอียด</label>
+                <input type="text" name="condition_detail" class="form-control" placeholder="เช่น สภาพดี 90%">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary fw-bold">บันทึกหนังสือ</button>
+            </div>
+        </form>
+    </div>
+
+    <h3>รายการหนังสือทั้งหมด</h3>
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th><th>ชื่อหนังสือ</th><th>หมวดหมู่</th><th>ค่าเช่า/วัน</th><th>สภาพ</th><th>สถานะ</th><th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% books.forEach(item => { %>
+                <tr>
+                    <td><%= item.id %></td>
+                    <td class="fw-bold"><%= item.book_name %></td>
+                    <td><span class="badge bg-secondary"><%= item.category_name %></span></td>
+                    <td><%= Number(item.rental_price).toLocaleString() %> ฿</td>
+                    <td><%= item.condition_detail %></td>
+                    <td>
+                        <span class="badge <%= item.status === 'Available' ? 'bg-success' : 'bg-danger' %>">
+                            <%= item.status === 'Available' ? 'พร้อมให้เช่า' : 'ถูกเช่าแล้ว' %>
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<%= item.id %>">แก้ไข</button>
+                        <a href="/books/delete/<%= item.id %>" class="btn btn-danger btn-sm" onclick="return confirm('ยืนยันลบ?')">ลบ</a>
+                    </td>
+                </tr>
+
+                <div class="modal fade" id="editModal<%= item.id %>" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="/books/update/<%= item.id %>" method="POST">
+                                <div class="modal-header"><h5 class="modal-title">แก้ไขหนังสือ (ID: <%= item.id %>)</h5></div>
+                                <div class="modal-body row g-3">
+                                    <div class="col-12"><label>ชื่อหนังสือ</label><input type="text" name="book_name" class="form-control" value="<%= item.book_name %>" required></div>
+                                    <div class="col-md-6"><label>ค่าเช่าต่อวัน</label><input type="number" step="0.01" name="rental_price" class="form-control" value="<%= item.rental_price %>" required></div>
+                                    <div class="col-md-6">
+                                        <label>สถานะ</label>
+                                        <select name="status" class="form-select">
+                                            <option value="Available" <%= item.status === 'Available' ? 'selected' : '' %>>พร้อมให้เช่า</option>
+                                            <option value="Rented" <%= item.status === 'Rented' ? 'selected' : '' %>>ถูกเช่าแล้ว</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12"><label>หมวดหมู่</label>
+                                        <select name="category_id" class="form-select">
+                                            <% categories.forEach(cat => { %>
+                                                <option value="<%= cat.id %>" <%= cat.id === item.category_id ? 'selected' : '' %>><%= cat.category_name %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="col-12"><label>รายละเอียด</label><input type="text" name="condition_detail" class="form-control" value="<%= item.condition_detail %>"></div>
+                                </div>
+                                <div class="modal-footer"><button type="submit" class="btn btn-primary">บันทึก</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>
